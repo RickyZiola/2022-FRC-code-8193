@@ -27,7 +27,7 @@ public class Robot extends TimedRobot {
 
   private RobotContainer m_robotContainer;
 
-  //Declare the joystick akises and buttons
+  //Declare the joystick axes and buttons
   final Joystick controller = new Joystick(0);
   int lJoyX = 0;
   int lJoyY = 1;
@@ -161,6 +161,11 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     m_robotDrive.arcadeDrive(controller.getY() * yOffSet, controller.getX() * xOffSet);  //Initialize the drive with the joysticks
+    m_indexMotor.set(rTrigger);
+    if (controller.getRawButton(x))
+      m_shooterMotor.set(0.65);
+    else if (controller.getRawButton(y))
+      m_shooterMotor.set(0.7);
     
   }
 
