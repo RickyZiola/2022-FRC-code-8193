@@ -14,6 +14,8 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
+import javax.lang.model.util.ElementScanner6;
+
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
 /**
@@ -162,12 +164,9 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    m_robotDrive.arcadeDrive(controller.getRawAxis(0) * yOffSet, controller.getRawAxis(2) * xOffSet);  //Initialize the drive with the joysticks
+    m_robotDrive.arcadeDrive(controller.getRawAxis(1) * yOffSet, controller.getRawAxis(2) * xOffSet);  //Initialize the drive with the joysticks
     m_indexMotor.set(rTrigger);
-    if (controller.getRawButton(x))
-      m_shooterMotor.set(0.65);
-    else if (controller.getRawButton(y))
-      m_shooterMotor.set(0.7);
+    m_shooterMotor.set(controller.getRawAxis(3));
     
   }
 

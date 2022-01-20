@@ -1,41 +1,6 @@
 {
   "HALProvider": {
-    "Other Devices": {
-      "Victor SPX[1]": {
-        "header": {
-          "open": true
-        }
-      },
-      "Victor SPX[2]": {
-        "header": {
-          "open": true
-        }
-      },
-      "Victor SPX[3]": {
-        "header": {
-          "open": true
-        }
-      },
-      "Victor SPX[4]": {
-        "header": {
-          "open": true
-        }
-      },
-      "Victor SPX[5]": {
-        "header": {
-          "open": true
-        }
-      },
-      "Victor SPX[6]": {
-        "header": {
-          "open": true
-        }
-      }
-    },
     "RoboRIO": {
-      "RoboRIO Input": {
-        "open": true
-      },
       "window": {
         "visible": true
       }
@@ -44,7 +9,6 @@
   "NTProvider": {
     "types": {
       "/FMSInfo": "FMSInfo",
-      "/LiveWindow/ExampleSubsystem": "Subsystem",
       "/LiveWindow/Ungrouped/DifferentialDrive[1]": "DifferentialDrive",
       "/LiveWindow/Ungrouped/Scheduler": "Scheduler"
     }
