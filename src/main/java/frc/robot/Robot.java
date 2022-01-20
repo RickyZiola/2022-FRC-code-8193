@@ -76,6 +76,8 @@ public class Robot extends TimedRobot {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
+
+    m_right.setInverted(true);
   }
 
   /**
@@ -160,7 +162,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    m_robotDrive.arcadeDrive(controller.getY() * yOffSet, controller.getX() * xOffSet);  //Initialize the drive with the joysticks
+    m_robotDrive.arcadeDrive(controller.getRawAxis(0) * yOffSet, controller.getRawAxis(1) * xOffSet);  //Initialize the drive with the joysticks
     m_indexMotor.set(rTrigger);
     if (controller.getRawButton(x))
       m_shooterMotor.set(0.65);
@@ -177,5 +179,8 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during test mode. */
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+    System.out.println(controller.getRawAxis(0));
+
+  }
 }
