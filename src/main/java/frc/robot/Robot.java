@@ -162,7 +162,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    m_robotDrive.arcadeDrive(controller.getRawAxis(0) * yOffSet, controller.getRawAxis(1) * xOffSet);  //Initialize the drive with the joysticks
+    m_robotDrive.arcadeDrive(controller.getRawAxis(0) * yOffSet, controller.getRawAxis(2) * xOffSet);  //Initialize the drive with the joysticks
     m_indexMotor.set(rTrigger);
     if (controller.getRawButton(x))
       m_shooterMotor.set(0.65);
