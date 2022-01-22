@@ -7,14 +7,13 @@ package frc.robot;
 import edu.wpi.first.wpilibj.Timer;
 
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.POVButton;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-
-import javax.lang.model.util.ElementScanner6;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
@@ -66,8 +65,7 @@ public class Robot extends TimedRobot {
   final DifferentialDrive m_robotDrive = new DifferentialDrive(m_left, m_right);
 
   //Declare the X and Y offsets that can be changed with left and right D-Pad
-  int xOffSet = 1;
-  int yOffSet = 1;
+  private double speedOffSet = 0.7;
 
   private POVButton up = new POVButton(controller, 0);
   private POVButton right = new POVButton(controller, 90);
@@ -86,7 +84,6 @@ public class Robot extends TimedRobot {
 
     m_right.setInverted(true);
   }
-
   /**
    * This function is called every robot packet, no matter the mode. Use this for items like
    * diagnostics that you want ran during disabled, autonomous, teleoperated and test.
@@ -100,17 +97,16 @@ public class Robot extends TimedRobot {
     // commands, running already-scheduled commands, removing finished or interrupted commands,
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
+    
     CommandScheduler.getInstance().run();
 
-    if(up.get())
-      yOffSet += 0.1;
-    if(right.get())
-      xOffSet += 0.1;
-    if(down.get())
-      yOffSet -= 0.1;
-    if(left.get())
-      xOffSet -= 0.1;
-  }
+    if(RobotController.getBatteryVoltage() < (RobotController.getBrownoutVoltage() + 0.1)) {
+      m_robotDrive.arcadeDrive(0, 0);
+      m_shooterMotor.set(0);
+      m_indexMotor.set(0);
+    }
+    
+    }
 
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
@@ -139,27 +135,22 @@ public class Robot extends TimedRobot {
   public void autonomousPeriodic() {
     double time = Timer.getFPGATimestamp();
     double elapsed = time - startTime;
-    System.out.print("Auton online for " + (int) elapsed + "s.");
     if (elapsed < 5) {
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(1);
       m_indexMotor.set(0);
-      System.out.println(" Winding up");
     } else if (elapsed < 8 && elapsed > 5) {
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(1);
       m_indexMotor.set(1);
-      System.out.println(" Firing.");
     } else if (elapsed < 11 && elapsed > 8) {
       m_robotDrive.arcadeDrive(-0.2, 0);
       m_shooterMotor.set(0);
       m_indexMotor.set(0);
-      System.out.println(" Driving.");
     } else if (elapsed > 11) {
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(0);
       m_indexMotor.set(0);
-      System.out.println(" Auton complete.");
     }
 
   }
@@ -173,14 +164,43 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+
+    speedOffSet = 1;
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+    // Sets the speed offset
+    if(controller.getRawButtonPressed(3))
+      speedOffSet -= 0.05;
+    if(controller.getRawButtonPressed(4))
+      speedOffSet += 0.05;
+    if(speedOffSet < 0)
+      speedOffSet = 0;
+    if(speedOffSet > 1)
+      speedOffSet = 1;
+    
+    double xAxis = 0;
+    double yAxis = 0;
 
-    m_robotDrive.arcadeDrive(controller.getRawAxis(1) * yOffSet, controller.getRawAxis(2) * xOffSet);  //Initialize the drive with the joysticks
-    m_indexMotor.set(rTrigger);
+    if(Math.abs(controller.getRawAxis(1)) < 0.13)
+      xAxis = 0;
+    else
+      xAxis = controller.getRawAxis(1);
+
+    if(Math.abs(controller.getRawAxis(2)) < 0.13)
+      yAxis = 0;
+    else
+      yAxis = controller.getRawAxis(2);
+
+    m_robotDrive.arcadeDrive(xAxis * speedOffSet, yAxis * speedOffSet);  //Initialize the drive with the joysticks
+    short speed = 0;
+    if(controller.getRawButton(1))
+      speed = 1;
+    else  
+      speed = 0;
+    m_indexMotor.set(speed);
     m_shooterMotor.set(((-controller.getRawAxis(3)) + 1) / 2);
     
   }
@@ -194,7 +214,6 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {
-    System.out.println(controller.getRawAxis(0));
 
   }
 }
