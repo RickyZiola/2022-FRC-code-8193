@@ -10,7 +10,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-
+import edu.wpi.first.wpilibj2.command.button.POVButton;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
@@ -68,6 +68,11 @@ public class Robot extends TimedRobot {
   //Declare the X and Y offsets that can be changed with left and right D-Pad
   int xOffSet = 1;
   int yOffSet = 1;
+
+  private POVButton up = new POVButton(controller, 0);
+  private POVButton right = new POVButton(controller, 90);
+  private POVButton down = new POVButton(controller, 180);
+  private POVButton left = new POVButton(controller, 270);
   
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -96,6 +101,15 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+
+    if(up.get())
+      yOffSet += 0.1;
+    if(right.get())
+      xOffSet += 0.1;
+    if(down.get())
+      yOffSet -= 0.1;
+    if(left.get())
+      xOffSet -= 0.1;
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
@@ -164,9 +178,10 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+
     m_robotDrive.arcadeDrive(controller.getRawAxis(1) * yOffSet, controller.getRawAxis(2) * xOffSet);  //Initialize the drive with the joysticks
     m_indexMotor.set(rTrigger);
-    m_shooterMotor.set(controller.getRawAxis(3));
+    m_shooterMotor.set(((-controller.getRawAxis(3)) + 1) / 2);
     
   }
 
