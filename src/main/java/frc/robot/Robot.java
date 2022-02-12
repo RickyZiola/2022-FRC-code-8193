@@ -114,7 +114,7 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
-    if(RobotController.getBatteryVoltage() < (RobotController.getBrownoutVoltage() + 0.1)) {
+    if(RobotController.getBatteryVoltage() < (RobotController.getBrownoutVoltage() + 0.5)) {
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(0);
       m_indexMotor.set(0);
