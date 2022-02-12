@@ -4,19 +4,23 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.Timer;
-
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.button.POVButton;
-import edu.wpi.first.wpilibj.SpeedControllerGroup;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import javax.lang.model.util.ElementScanner6;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.UsbCamera;
+import edu.wpi.first.cscore.VideoSink;
+import edu.wpi.first.cscore.VideoSource.ConnectionStrategy;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.SpeedControllerGroup;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.button.POVButton;
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -30,6 +34,7 @@ public class Robot extends TimedRobot {
 
   //Declare the joystick axes and buttons
   final Joystick controller = new Joystick(0);
+  final Joystick controller2 = new Joystick(1);
   int lJoyX = 0;
   int lJoyY = 1;
   int lTrigger = 7;
@@ -71,6 +76,10 @@ public class Robot extends TimedRobot {
   private POVButton right = new POVButton(controller, 90);
   private POVButton down = new POVButton(controller, 180);
   private POVButton left = new POVButton(controller, 270);
+
+  UsbCamera camera1;
+  UsbCamera camera2;
+  VideoSink server;
   
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -78,6 +87,13 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
+    camera1 = CameraServer.getInstance().startAutomaticCapture(0);
+    camera2 = CameraServer.getInstance().startAutomaticCapture(1);
+
+    server = CameraServer.getInstance().getServer();
+
+    camera1.setConnectionStrategy(ConnectionStrategy.kKeepOpen);
+    camera2.setConnectionStrategy(ConnectionStrategy.kKeepOpen);
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
@@ -97,9 +113,7 @@ public class Robot extends TimedRobot {
     // commands, running already-scheduled commands, removing finished or interrupted commands,
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
-    
     CommandScheduler.getInstance().run();
-
     if(RobotController.getBatteryVoltage() < (RobotController.getBrownoutVoltage() + 0.1)) {
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(0);
@@ -135,6 +149,7 @@ public class Robot extends TimedRobot {
   public void autonomousPeriodic() {
     double time = Timer.getFPGATimestamp();
     double elapsed = time - startTime;
+    System.out.println(elapsed);
     if (elapsed < 5) {
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(1);
@@ -143,11 +158,15 @@ public class Robot extends TimedRobot {
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(1);
       m_indexMotor.set(1);
-    } else if (elapsed < 11 && elapsed > 8) {
-      m_robotDrive.arcadeDrive(-0.2, 0);
+    } else if (elapsed < 10.5 && elapsed > 8) {
+      m_robotDrive.arcadeDrive(-0.45, 0);
       m_shooterMotor.set(0);
       m_indexMotor.set(0);
-    } else if (elapsed > 11) {
+    } else if (elapsed > 10.5 && elapsed < 12.3) {
+      m_robotDrive.arcadeDrive(0, 0.5);
+      m_shooterMotor.set(0);
+      m_indexMotor.set(0);
+    }else if (elapsed > 12.3) {
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(0);
       m_indexMotor.set(0);
@@ -165,16 +184,16 @@ public class Robot extends TimedRobot {
       m_autonomousCommand.cancel();
     }
 
-    speedOffSet = 1;
+    speedOffSet = 0.75;
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
     // Sets the speed offset
-    if(controller.getRawButtonPressed(3))
+    if(controller.getRawButtonPressed(11))
       speedOffSet -= 0.05;
-    if(controller.getRawButtonPressed(4))
+    if(controller.getRawButtonPressed(12))
       speedOffSet += 0.05;
     if(speedOffSet < 0)
       speedOffSet = 0;
@@ -189,19 +208,26 @@ public class Robot extends TimedRobot {
     else
       xAxis = controller.getRawAxis(1);
 
-    if(Math.abs(controller.getRawAxis(2)) < 0.13)
+    if(Math.abs(controller.getRawAxis(0)) < 0.13)
       yAxis = 0;
     else
-      yAxis = controller.getRawAxis(2);
+      yAxis = controller.getRawAxis(0);
 
-    m_robotDrive.arcadeDrive(xAxis * speedOffSet, yAxis * speedOffSet);  //Initialize the drive with the joysticks
+    m_robotDrive.arcadeDrive((-xAxis) * speedOffSet, yAxis * speedOffSet * 0.71);  //Initialize the drive with the joysticks
     short speed = 0;
-    if(controller.getRawButton(1))
+    if(controller2.getRawButton(8))
       speed = 1;
-    else  
+    else  if (controller2.getRawButton(7))
+      speed = -1;
+    else
       speed = 0;
     m_indexMotor.set(speed);
-    m_shooterMotor.set(((-controller.getRawAxis(3)) + 1) / 2);
+    double shooter = 0;
+    if(controller2.getRawButton(1))
+      shooter = 0.65;
+    if(controller2.getRawButton(4))
+      shooter = 0.8;
+    m_shooterMotor.set(shooter);
     
   }
 
