@@ -4,19 +4,19 @@
 
 package frc.robot; 
 
+import java.lang.ModuleLayer.Controller;
+
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.cscore.VideoSink;
-import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.interfaces.Accelerometer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.POVButton;
@@ -81,9 +81,9 @@ public class Robot extends TimedRobot {
   UsbCamera camera2;
   VideoSink server;
 
-  Accelerometer accel = new BuiltInAccelerometer();
+  //Accelerometer accel = new BuiltInAccelerometer();
 
-  boolean bothDrivers = false;
+  int drivers = 0;
   
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -92,11 +92,11 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     if(controller.isConnected() && controller2.isConnected())
-      bothDrivers = true;
-    if(bothDrivers)
-      System.out.println("2 drivers connected!");
+      drivers = 3;
+    else if(controller.isConnected() && controller.getName() == "Logitech Extreme 3D")
+      drivers = 1;
     else
-      System.out.println("1 driver connected!");
+      drivers = 2;
     camera1 = CameraServer.startAutomaticCapture(0);
     camera2 = CameraServer.startAutomaticCapture(1);
     /*
@@ -184,11 +184,18 @@ public class Robot extends TimedRobot {
   double shooter;
   @Override
   public void teleopInit() {
-    if(bothDrivers)
+    if(controller.isConnected() && controller2.isConnected())
+      drivers = 3;
+    else if(controller.isConnected() && controller.getName() == "Logitech Extreme 3D")
+      drivers = 1;
+    else
+      drivers = 2;
+    if(drivers == 3)
       System.out.println("2 driver mode");
     else
-      System.out.println("1 driver mode");
-    // This makes sure that the autonomous stops running when
+      System.out.println("1 driver mode with controller " + controller.getName().toString());
+    System.out.println(drivers);
+      // This makes sure that the autonomous stops running when
     // teleop starts running. If you want the autonomous to
     // continue until interrupted by another command, remove
     // this line or comment it out.
@@ -197,7 +204,7 @@ public class Robot extends TimedRobot {
     }
 
     speedOffSet = 0.75;
-    if(!bothDrivers)
+    if(drivers == 1)
       shooter = 0.5;
     else
       shooter = 0;
@@ -231,10 +238,17 @@ public class Robot extends TimedRobot {
 
     m_robotDrive.arcadeDrive((-xAxis) * speedOffSet, yAxis * speedOffSet * 0.71);  //Initialize the drive with the joysticks
     short speed = 0;
-    if(bothDrivers) {
+    if(drivers == 3) {
       if(controller2.getRawButton(8))
         speed = 1;
       else  if (controller2.getRawButton(7))
+        speed = -1;
+      else
+        speed = 0;
+    }else if(drivers == 2) {
+      if(controller.getRawButton(8))
+        speed = 1;
+      else  if (controller.getRawButton(7))
         speed = -1;
       else
         speed = 0;
@@ -247,7 +261,7 @@ public class Robot extends TimedRobot {
         speed = 0;
     }
     m_indexMotor.set(speed);
-    if(bothDrivers){
+    if(drivers == 3){
       if(controller2.getRawButtonPressed(5)) 
         shooter -= 0.1;
       else if(controller2.getRawButtonPressed(6)) 
@@ -260,6 +274,19 @@ public class Robot extends TimedRobot {
 
       if (controller2.getRawButtonPressed(2))
         shooter = 0;
+    }else if(drivers == 2){
+      if(controller.getRawButtonPressed(5)) 
+        shooter -= 0.1;
+      else if(controller.getRawButtonPressed(6)) 
+        shooter += 0.1;
+
+      if(controller.getRawButtonPressed(1))
+        shooter = 0.65;
+      else if(controller.getRawButtonPressed(4))
+        shooter = 0.8;
+
+      if (controller.getRawButtonPressed(2))
+        shooter = 0;
     }else{
       if(controller.getRawButtonPressed(4))
         shooter += 0.1;
@@ -270,7 +297,7 @@ public class Robot extends TimedRobot {
       if(shooter > 1)
         shooter = 1;
     }
-    if(!bothDrivers && shooter <= 0.5)
+    if(drivers == 1 && shooter <= 0.5)
       m_shooterMotor.set(0);
     else
       m_shooterMotor.set(shooter);
