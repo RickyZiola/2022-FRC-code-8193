@@ -2,9 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot;
-
-import javax.lang.model.util.ElementScanner6;
+package frc.robot; 
 
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
@@ -12,15 +10,18 @@ import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.cscore.VideoSink;
 import edu.wpi.first.cscore.VideoSource.ConnectionStrategy;
+import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.interfaces.Accelerometer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.POVButton;
+
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -80,6 +81,10 @@ public class Robot extends TimedRobot {
   UsbCamera camera1;
   UsbCamera camera2;
   VideoSink server;
+
+  Accelerometer accel = new BuiltInAccelerometer();
+
+  boolean bothDrivers = false;
   
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -87,13 +92,14 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    camera1 = CameraServer.getInstance().startAutomaticCapture(0);
-    camera2 = CameraServer.getInstance().startAutomaticCapture(1);
-
-    server = CameraServer.getInstance().getServer();
-
+    if(controller.isConnected() && controller2.isConnected())
+      bothDrivers = true;
+    camera1 = CameraServer.startAutomaticCapture(0);
+    camera2 = CameraServer.startAutomaticCapture(1);
+    /*
     camera1.setConnectionStrategy(ConnectionStrategy.kKeepOpen);
     camera2.setConnectionStrategy(ConnectionStrategy.kKeepOpen);
+    */
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
@@ -149,7 +155,6 @@ public class Robot extends TimedRobot {
   public void autonomousPeriodic() {
     double time = Timer.getFPGATimestamp();
     double elapsed = time - startTime;
-    System.out.println(elapsed);
     if (elapsed < 5) {
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(1);
@@ -173,9 +178,13 @@ public class Robot extends TimedRobot {
     }
 
   }
-
+  double shooter;
   @Override
   public void teleopInit() {
+    if(bothDrivers)
+      System.out.println("2 driver mode");
+    else
+      System.out.println("1 driver mode");
     // This makes sure that the autonomous stops running when
     // teleop starts running. If you want the autonomous to
     // continue until interrupted by another command, remove
@@ -185,15 +194,19 @@ public class Robot extends TimedRobot {
     }
 
     speedOffSet = 0.75;
+    if(!bothDrivers)
+      shooter = 0.5;
+    else
+      shooter = 0;
   }
-
+  
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
     // Sets the speed offset
-    if(controller.getRawButtonPressed(11))
+    if(controller.getRawButtonPressed(11)) 
       speedOffSet -= 0.05;
-    if(controller.getRawButtonPressed(12))
+    if(controller.getRawButtonPressed(12)) 
       speedOffSet += 0.05;
     if(speedOffSet < 0)
       speedOffSet = 0;
@@ -203,31 +216,61 @@ public class Robot extends TimedRobot {
     double xAxis = 0;
     double yAxis = 0;
 
-    if(Math.abs(controller.getRawAxis(1)) < 0.13)
+    if(Math.abs(controller.getRawAxis(1)) < 0.1)
       xAxis = 0;
     else
       xAxis = controller.getRawAxis(1);
 
-    if(Math.abs(controller.getRawAxis(0)) < 0.13)
+    if(Math.abs(controller.getRawAxis(0)) < 0.1)
       yAxis = 0;
     else
       yAxis = controller.getRawAxis(0);
 
     m_robotDrive.arcadeDrive((-xAxis) * speedOffSet, yAxis * speedOffSet * 0.71);  //Initialize the drive with the joysticks
     short speed = 0;
-    if(controller2.getRawButton(8))
-      speed = 1;
-    else  if (controller2.getRawButton(7))
-      speed = -1;
-    else
-      speed = 0;
+    if(bothDrivers) {
+      if(controller2.getRawButton(8))
+        speed = 1;
+      else  if (controller2.getRawButton(7))
+        speed = -1;
+      else
+        speed = 0;
+    }else{
+      if(controller.getRawButton(1))
+        speed = 1;
+      else  if (controller.getRawButton(5))
+        speed = -1;
+      else
+        speed = 0;
+    }
     m_indexMotor.set(speed);
-    double shooter = 0;
-    if(controller2.getRawButton(1))
-      shooter = 0.65;
-    if(controller2.getRawButton(4))
-      shooter = 0.8;
-    m_shooterMotor.set(shooter);
+    if(bothDrivers){
+      if(controller2.getRawButtonPressed(5)) 
+        shooter -= 0.1;
+      else if(controller2.getRawButtonPressed(6)) 
+        shooter += 0.1;
+
+      if(controller2.getRawButtonPressed(1))
+        shooter = 0.65;
+      else if(controller2.getRawButtonPressed(4))
+        shooter = 0.8;
+
+      if (controller2.getRawButtonPressed(2))
+        shooter = 0;
+    }else{
+      if(controller.getRawButtonPressed(4))
+        shooter += 0.1;
+      if(controller.getRawButtonPressed(3))
+        shooter -= 0.1;
+      if(shooter < 0.5)
+        shooter = 0.5;
+      if(shooter > 1)
+        shooter = 1;
+    }
+    if(!bothDrivers && shooter <= 0.5)
+      m_shooterMotor.set(0);
+    else
+      m_shooterMotor.set(shooter);
     
   }
 
