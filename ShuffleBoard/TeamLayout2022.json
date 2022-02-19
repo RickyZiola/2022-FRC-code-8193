@@ -9,6 +9,7 @@
         "showGrid": true,
         "hgap": 16.0,
         "vgap": 16.0,
+        "titleType": 0,
         "tiles": {
           "0,0": {
             "size": [
@@ -239,6 +240,7 @@
         "showGrid": true,
         "hgap": 16.0,
         "vgap": 16.0,
+        "titleType": 0,
         "tiles": {
           "0,0": {
             "size": [

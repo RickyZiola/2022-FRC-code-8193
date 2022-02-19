@@ -9,7 +9,6 @@ import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.cscore.VideoSink;
-import edu.wpi.first.cscore.VideoSource.ConnectionStrategy;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotController;
@@ -94,6 +93,10 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     if(controller.isConnected() && controller2.isConnected())
       bothDrivers = true;
+    if(bothDrivers)
+      System.out.println("2 drivers connected!");
+    else
+      System.out.println("1 driver connected!");
     camera1 = CameraServer.startAutomaticCapture(0);
     camera2 = CameraServer.startAutomaticCapture(1);
     /*
