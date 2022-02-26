@@ -65,7 +65,7 @@ public class Robot extends TimedRobot {
 
   //Declare the motor groups
   private SpeedControllerGroup m_left = new SpeedControllerGroup(m_leftMasterMotor, m_leftSlaveMotor);
-  private SpeedControllerGroup m_right;
+  private SpeedControllerGroup m_right = new SpeedControllerGroup(m_rightMasterMotor, m_rightSlaveMotor);
 
   //Start the differential drive
   final DifferentialDrive m_robotDrive = new DifferentialDrive(m_left, m_right);
@@ -104,10 +104,6 @@ public class Robot extends TimedRobot {
       drivers = 2;
     camera1 = CameraServer.startAutomaticCapture(0);
     camera2 = CameraServer.startAutomaticCapture(1);
-
-    m_leftMasterMotor.setInverted(true);
-    m_leftSlaveMotor.setInverted(true);
-    m_right = new SpeedControllerGroup(m_rightMasterMotor, m_rightSlaveMotor);
     /*
     camera1.setConnectionStrategy(ConnectionStrategy.kKeepOpen);
     camera2.setConnectionStrategy(ConnectionStrategy.kKeepOpen);
@@ -115,6 +111,8 @@ public class Robot extends TimedRobot {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
+
+    m_right.setInverted(true);
 
     compass.calibrate();
   }
@@ -248,26 +246,26 @@ public class Robot extends TimedRobot {
       yAxis = controller.getRawAxis(0);
 
     m_robotDrive.arcadeDrive((-xAxis) * speedOffSet, yAxis * speedOffSet * 0.71);  //Initialize the drive with the joysticks
-    short speed = 0;
+    double speed = 0;
     if(drivers == 3) {
-      if(controller2.getRawButton(8))
-        speed = 1;
-      else  if (controller2.getRawButton(7))
-        speed = -1;
+      if(controller2.getRawButton(7))
+        speed = 0.4;
+      else  if (controller2.getRawButton(8))
+        speed = -0.4;
       else
         speed = 0;
     }else if(drivers == 2) {
-      if(controller.getRawButton(8))
-        speed = 1;
-      else  if (controller.getRawButton(7))
-        speed = -1;
+      if(controller.getRawButton(7))
+        speed = 0.4;
+      else  if (controller.getRawButton(8))
+        speed = -0.4;
       else
         speed = 0;
     }else{
       if(controller.getRawButton(1))
-        speed = 1;
+        speed = 0.4;
       else  if (controller.getRawButton(5))
-        speed = -1;
+        speed = -0.4;
       else
         speed = 0;
     }
