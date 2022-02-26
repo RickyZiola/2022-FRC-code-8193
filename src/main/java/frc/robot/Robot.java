@@ -4,19 +4,20 @@
 
 package frc.robot; 
 
-import java.lang.ModuleLayer.Controller;
-
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.cscore.VideoSink;
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.smartdashboard.SendableBuilderImpl;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.POVButton;
@@ -64,7 +65,7 @@ public class Robot extends TimedRobot {
 
   //Declare the motor groups
   private SpeedControllerGroup m_left = new SpeedControllerGroup(m_leftMasterMotor, m_leftSlaveMotor);
-  private SpeedControllerGroup m_right = new SpeedControllerGroup(m_rightMasterMotor, m_rightSlaveMotor);
+  private SpeedControllerGroup m_right;
 
   //Start the differential drive
   final DifferentialDrive m_robotDrive = new DifferentialDrive(m_left, m_right);
@@ -81,6 +82,8 @@ public class Robot extends TimedRobot {
   UsbCamera camera2;
   VideoSink server;
 
+  private ADXRS450_Gyro compass = new ADXRS450_Gyro(SPI.Port.kOnboardCS0);
+
   //Accelerometer accel = new BuiltInAccelerometer();
 
   int drivers = 0;
@@ -91,14 +94,20 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
+    compass.calibrate();
+    System.out.println(compass.getAngle());
     if(controller.isConnected() && controller2.isConnected())
       drivers = 3;
-    else if(controller.isConnected() && controller.getName() == "Logitech Extreme 3D")
+    else if(controller.isConnected() && controller.getName().equals("Logitech Extreme 3D"))
       drivers = 1;
-    else
+    else if(controller.isConnected() && controller.getName().equals("Logitech Dual Action"))
       drivers = 2;
     camera1 = CameraServer.startAutomaticCapture(0);
     camera2 = CameraServer.startAutomaticCapture(1);
+
+    m_leftMasterMotor.setInverted(true);
+    m_leftSlaveMotor.setInverted(true);
+    m_right = new SpeedControllerGroup(m_rightMasterMotor, m_rightSlaveMotor);
     /*
     camera1.setConnectionStrategy(ConnectionStrategy.kKeepOpen);
     camera2.setConnectionStrategy(ConnectionStrategy.kKeepOpen);
@@ -107,7 +116,7 @@ public class Robot extends TimedRobot {
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
 
-    m_right.setInverted(true);
+    compass.calibrate();
   }
   /**
    * This function is called every robot packet, no matter the mode. Use this for items like
@@ -144,6 +153,7 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
+    //compass.calibrate();
     startTime = Timer.getFPGATimestamp();
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
@@ -170,25 +180,26 @@ public class Robot extends TimedRobot {
       m_robotDrive.arcadeDrive(-0.45, 0);
       m_shooterMotor.set(0);
       m_indexMotor.set(0);
-    } else if (elapsed > 10.5 && elapsed < 12.3) {
-      m_robotDrive.arcadeDrive(0, 0.5);
+    } else if (elapsed > 10.5 && elapsed < 13) {
+      m_robotDrive.arcadeDrive(0, 0.45);
+      System.out.println(compass.getAngle());
       m_shooterMotor.set(0);
       m_indexMotor.set(0);
-    }else if (elapsed > 12.3) {
+    }else{
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(0);
       m_indexMotor.set(0);
     }
-
+    System.out.println(elapsed);
   }
   double shooter;
   @Override
   public void teleopInit() {
     if(controller.isConnected() && controller2.isConnected())
       drivers = 3;
-    else if(controller.isConnected() && controller.getName() == "Logitech Extreme 3D")
+    else if(controller.isConnected() && controller.getName().equals("Logitech Extreme 3D"))
       drivers = 1;
-    else
+    else if(controller.isConnected() && controller.getName().equals("Logitech Dual Action"))
       drivers = 2;
     if(drivers == 3)
       System.out.println("2 driver mode");
@@ -307,7 +318,7 @@ public class Robot extends TimedRobot {
   @Override
   public void testInit() {
     // Cancels all running commands at the start of test mode.
-    CommandScheduler.getInstance().cancelAll();
+    CommandScheduler.getInstance().cancelAll();;
   }
 
   /** This function is called periodically during test mode. */
