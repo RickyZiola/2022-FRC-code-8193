@@ -9,15 +9,12 @@ import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.cscore.VideoSink;
-import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.smartdashboard.SendableBuilderImpl;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.POVButton;
@@ -60,8 +57,10 @@ public class Robot extends TimedRobot {
   private final WPI_VictorSPX m_rightSlaveMotor = new WPI_VictorSPX(4);
 
   // Index and shooter motors
-  private final WPI_VictorSPX m_indexMotor = new WPI_VictorSPX(5);
+  private final WPI_VictorSPX m_indexMotor = new WPI_VictorSPX(7);
   private final WPI_VictorSPX m_shooterMotor = new WPI_VictorSPX(6);
+
+  private final WPI_VictorSPX m_pickupMotor = new WPI_VictorSPX(5);
 
   //Declare the motor groups
   private SpeedControllerGroup m_left = new SpeedControllerGroup(m_leftMasterMotor, m_leftSlaveMotor);
@@ -82,8 +81,6 @@ public class Robot extends TimedRobot {
   UsbCamera camera2;
   VideoSink server;
 
-  private ADXRS450_Gyro compass = new ADXRS450_Gyro(SPI.Port.kOnboardCS0);
-
   //Accelerometer accel = new BuiltInAccelerometer();
 
   int drivers = 0;
@@ -94,8 +91,6 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    compass.calibrate();
-    System.out.println(compass.getAngle());
     if(controller.isConnected() && controller2.isConnected())
       drivers = 3;
     else if(controller.isConnected() && controller.getName().equals("Logitech Extreme 3D"))
@@ -113,8 +108,6 @@ public class Robot extends TimedRobot {
     m_robotContainer = new RobotContainer();
 
     m_right.setInverted(true);
-
-    compass.calibrate();
   }
   /**
    * This function is called every robot packet, no matter the mode. Use this for items like
@@ -144,7 +137,8 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+  }
 
   private double startTime;
 
@@ -170,23 +164,27 @@ public class Robot extends TimedRobot {
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(1);
       m_indexMotor.set(0);
+      m_pickupMotor.set(0);
     } else if (elapsed < 8 && elapsed > 5) {
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(1);
-      m_indexMotor.set(1);
+      m_pickupMotor.set(1);
+      m_indexMotor.set(0);
     } else if (elapsed < 10.5 && elapsed > 8) {
       m_robotDrive.arcadeDrive(-0.45, 0);
       m_shooterMotor.set(0);
       m_indexMotor.set(0);
+      m_pickupMotor.set(0);
     } else if (elapsed > 10.5 && elapsed < 13) {
       m_robotDrive.arcadeDrive(0, 0.45);
-      System.out.println(compass.getAngle());
       m_shooterMotor.set(0);
       m_indexMotor.set(0);
+      m_pickupMotor.set(0);
     }else{
       m_robotDrive.arcadeDrive(0, 0);
       m_shooterMotor.set(0);
       m_indexMotor.set(0);
+      m_pickupMotor.set(0);
     }
     System.out.println(elapsed);
   }
@@ -203,7 +201,6 @@ public class Robot extends TimedRobot {
       System.out.println("2 driver mode");
     else
       System.out.println("1 driver mode with controller " + controller.getName().toString());
-    System.out.println(drivers);
       // This makes sure that the autonomous stops running when
     // teleop starts running. If you want the autonomous to
     // continue until interrupted by another command, remove
@@ -222,6 +219,14 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
+    double pickupSpeed = 0;
+    if(up.get())
+      pickupSpeed = 0.4;
+    else if(down.get())
+      pickupSpeed = -0.4;
+    else
+      pickupSpeed = 0;
+    m_pickupMotor.set(pickupSpeed);
     // Sets the speed offset
     if(controller.getRawButtonPressed(11)) 
       speedOffSet -= 0.05;
@@ -249,23 +254,23 @@ public class Robot extends TimedRobot {
     double speed = 0;
     if(drivers == 3) {
       if(controller2.getRawButton(7))
-        speed = 0.4;
+        speed = 0.6;
       else  if (controller2.getRawButton(8))
-        speed = -0.4;
+        speed = -0.6;
       else
         speed = 0;
     }else if(drivers == 2) {
       if(controller.getRawButton(7))
-        speed = 0.4;
+        speed = 0.6;
       else  if (controller.getRawButton(8))
-        speed = -0.4;
+        speed = -0.6;
       else
         speed = 0;
     }else{
       if(controller.getRawButton(1))
-        speed = 0.4;
+        speed = 0.6;
       else  if (controller.getRawButton(5))
-        speed = -0.4;
+        speed = -0.6;
       else
         speed = 0;
     }
